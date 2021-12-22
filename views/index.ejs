@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">   
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js" integrity="sha384-IQsoLXl5PILFhosVNubq5LC7Qb9DXgDA9i+tQ8Zj3iwWAwPtgFTxbJ8NT4GN1R8p" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.min.js" integrity="sha384-cVKIPhGWiC2Al4u+LWgxfKTRIcfu0JTxR+EQDz/bgldoEyl4H0zUF0QKbrJ0EcQF" crossorigin="anonymous"></script>
+    <title>Chat</title>
+    <script src="./socket.io/socket.io.js"></script>
+ <style>
+     body {
+display: flex; 
+justify-content: center; 
+align-content: center;
+margin: 0;
+font-family: var(--bs-font-sans-serif);
+font-size: 1rem;
+font-weight: 400;
+line-height: 1.5;
+color: #568bc1;
+background-color: #f1e6e6;
+-webkit-text-size-adjust: 100%;
+-webkit-tap-highlight-color: #251c1c00;
+}
+.imagenli{
+display: flex;
+align-items: center;
+
+}
+.imagendiv{
+width: 30px;
+overflow: hidden;
+display: flex;
+justify-content: center;
+align-items: center;
+border-radius: 50%;
+background-color: #fff;
+border: 1px solid #000;
+height: 30px;
+margin-right: 10px;
+}
+.imagen{
+width: auto;
+height: 100%;
+max-width: fit-content;
+}
+#container_chat.active>div:last-of-type, #container_chat>div:first-of-type {
+display: block;
+}
+#container_chat.active>div:first-of-type, #container_chat>div:last-of-type {
+display: none;
+}
+.inputbuton{
+background-color: #4CAF50; /* Green */
+        border: none;
+        color: white;
+        padding: 15px 32px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 16px;
+        cursor: pointer;
+}
+.headerp{
+
+padding: 20px 30px;
+background-color: #0d6efd;
+border-bottom-right-radius: 0;
+border-bottom-left-radius: 0;
+font-size: 12px;
+font-family: sans-serif;
+color: #fff;
+}
+ </style>
+</head>
+<body>
+    <div class="row">
+    <div class="card" style="width: 80%;">
+
+        <div class="card-body">
+        <h1></h1>
+        <div class="col-xs-8 col-xs-offset-2">
+            <h2 class="text-center">Ingrese nuevo producto</h2>
+    
+            <form method="post">
+            <div class="form-group">
+                <label for="title">Titulo: </label>
+                <input type="text" name="title" id="title" class="form-control" placeholder="Entry a new Title" required>
+            </div>
+            <div class="form-group">
+                <label for="body">Precio: </label>
+                <input type="text" name="body" rows="3"  id="body" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="url">Url: </label>
+                <input type="text" name="url" rows="3"  id="url" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <input type="submit"  value="Agregar Producto" class="btn btn-primary">
+            </div>
+            </form>
+        </div>
+        <div class="col-xs-8 col-xs-offset-2">
+            <h4 class="text-center">Lista de Productos</h4>
+           
+        </div>
+    </div>
+
+
+
+    <% if(entries.length) {%>
+        <% entries.forEach(function(entry){%>
+           <div class="panel panel-primary">
+              <div class="panel-heading">
+                 <%= entry.title%>
+                 <div class="pull-right">
+                   Ingreso: <%= entry.published%>
+                 </div>
+              </div>
+              <div class="panel-body">
+                Precio: <%= entry.content%>
+              </div>
+              <div class="panel-body">
+                Foto: <%= entry.url%>
+              </div>
+            
+           </div>
+        <%})%>
+     <%} else {%>
+        <p>No hay productos cargados</p>
+     <%}%>
+
+
+</div>
+</div>
+    <div class="row">
+
+  
+        <div id="container_chat">
+            <div>
+                <hr>
+                <h2>Sala de chat</h2>
+                <form id="data_user">
+                    <div>
+                        <input id="name_user" type="text" placeholder="Ingresa tu nombre">
+                        <input id="email_user" type="text" placeholder="Ingresa tu correo">
+                        <input id="photo" type="file">
+                        <input class="btn btn-primary" type="submit" value="Ingresar al chat">
+                    </div>
+                </form>
+            </div>
+            <div>
+                <div style="display: flex;
+                justify-content: space-between;
+                max-width: 800px;
+                margin: 50px auto 0px;">
+                    <div style="width: calc(100% - 300px);
+                    padding: 0px 20px 0px 0px;">
+                        <input type="text" id="inputtext" placeholder="Ingrese aquí su texto">
+                        <button id="sendSocket">Enviar</button>
+                        <p id="contenedor_texto" class="headerp"></p>
+                    </div>
+                    <div class="users" style="box-shadow: 0 14px 28px rgb(0 0 0 / 25%), 0 10px 10px rgb(0 0 0 / 22%);
+                    width: 300px;">
+                        <div class="header_users" style="padding: 20px;
+                background-color: #0d6efd;               
+                font-size: 12px;
+                font-family: sans-serif;
+                color: #fff;">
+                            <h4>Todos los usuarios <i id="fechaActual" style="color: rgb(100, 60, 23);"></i></h4>
+                        </div>
+                        <div class="body_users">
+                            <ul id="user_list">
+                                <li>
+                                    <span></span>
+                                    <h6>Historial de Chat</h6>
+                                
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <script>
+            let student = null;
+            let socket = null;
+            let fechaActual = document.getElementById("fechaActual");
+            let input = document.getElementById("inputtext");
+            let parrafo = document.getElementById("contenedor_texto");
+            let button = document.getElementById("sendSocket");
+            let form_data_user = document.getElementById("data_user");
+            let container_chat = document.getElementById("container_chat");
+            let user_list = document.getElementById("user_list");
+            form_data_user.addEventListener("submit", e=>{
+                e.preventDefault();
+                let file =e.target[2].files[0];
+                student = {
+                    name: e.target[0].value,
+                    email: e.target[1].value
+                }
+                if(student.name == "" || student.email == ""){
+                    window.location.reload();
+                }
+                socket = io();
+
+
+                let reader = new FileReader();
+
+                reader.onload = function(e) {
+                student.photo = e.target.result;//phot 64 bits
+                    socket.emit("addUser", student);
+                }
+
+                reader.readAsDataURL(file);
+
+            //  socket.emit("addUser", student);
+                container_chat.classList = "active";
+                readSockets();
+            });
+
+        
+
+            function readSockets(){
+                loadChat();
+
+                socket.on("listenserver", data =>{
+                    console.log("Recibiendo..", data);
+                    let inner = ``;
+                    data.forEach(element => {
+                        inner += `<b>${element.name}:</b> ${element.mensaje} </br>`;
+                    });
+                    parrafo.innerHTML = inner;
+                    // console.log("Info enviada desde neustro servidor [fillP]", data);
+                });
+
+                
+            }
+
+            function loadChat(){
+                socket.on("init", data =>{
+                    let inner = ``;
+                    console.log("Recibiendo..", data);
+                    data.forEach(element => {
+                        inner += `<b>${element.email}:</b> ${element.mensaje} </br>`;
+                    });
+                    parrafo.innerHTML = inner;
+                });
+
+                socket.on("loadUsers", data =>{
+                    console.log("Nuevo usuario", data);
+                    let inner = ``;
+                    data.forEach(element => {
+                        let status = element.active ? "(conectado)" : "(desconectado)";
+                    // let border_color = element.active ? "#13d586" : "#afafaf";
+                        inner += `<li style='display: fllex; align-items: center;'>
+                                <div style='width: 30px;
+                overflow: hidden;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                border-radius: 50%;
+                background-color: #fff;
+                border: 1px solid #000;
+                height: 30px;
+                margin-right: 10px;'>
+                            
+                                    <img style='width: auto;
+                                        height: 100%;
+                                        max-width: fit-content;'
+                                        src=${element.photo}>
+                                </div>
+                                <b>${element.email}:</b> ${status}
+                                </li>`;
+                    });
+                    user_list.innerHTML = inner;
+                    fechaActual.innerHTML = new Date().toLocaleDateString();
+                    hola();
+                });
+            }
+     
+            button.addEventListener("click", e =>{
+                let sendMessagge = {
+                    ...student,
+                    mensaje: input.value
+                }
+                socket.emit("mensaje", sendMessagge);
+                input.value = "";
+            })
+            input.addEventListener("keyup", e =>{
+        
+                    socket.emit("loadUsers", input.value);
+                //  input.value = "";
+                
+            })
+            function hola(){
+                console.log("hola");
+                //requiere fs
+              //  writeFileSync('~/public/mensajes.txt', JSON.stringify(data));
+            }
+        </script>
+      </div>
+   
+</body>
+</html>
