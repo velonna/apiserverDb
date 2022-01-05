@@ -1,6 +1,7 @@
 let {Server: SocketIO} = require("socket.io");///
 //let Contenedor = require('./../..models/contenedor.js');
 //let contenedor = new Contenedor("./chat.txt");
+
 class Socket {
     static instancia;
     constructor(http){
